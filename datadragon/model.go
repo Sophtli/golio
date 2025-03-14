@@ -194,6 +194,7 @@ type Item struct {
 	Stats            ItemStats       `json:"stats"`
 	Tags             []string        `json:"tags"`
 	Maps             map[string]bool `json:"maps"`
+	Image            ImageData       `json:"image"`
 }
 
 // ItemStats contains information about the stats of an item
