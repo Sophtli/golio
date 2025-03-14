@@ -366,7 +366,7 @@ func (p *Participant) GetProfileIcon(client *datadragon.Client) (datadragon.Prof
 
 // GetChampion returns the champion played by this participant
 func (p *Participant) GetChampion(client *datadragon.Client) (datadragon.ChampionDataExtended, error) {
-	return client.GetChampionByID(strconv.Itoa(p.ChampionID))
+	return client.GetChampionByID(p.ChampionName)
 }
 
 // GetSpell1 returns the first summoner spell of this participant
