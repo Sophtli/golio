@@ -64,6 +64,8 @@ type Client struct {
 	runes              []Item
 	summonersMu        sync.RWMutex
 	summoners          []SummonerSpell
+	perksMu            sync.RWMutex
+	perks              []Perk
 }
 
 // NewClient returns a new client for the Data Dragon service.
@@ -330,6 +332,55 @@ func (c *Client) GetSummonerSpell(id string) (SummonerSpell, error) {
 	return SummonerSpell{}, api.ErrNotFound
 }
 
+// GetPerks returns all perks, the new runes system
+func (c *Client) GetPerks() ([]Perk, error) {
+	unlock, toggle := internal.RWLockToggle(&c.perksMu)
+	defer unlock()
+	if len(c.perks) < 1 {
+		toggle()
+		var res []Perk
+		if err := c.getInto("/runesReforged.json", &res); err != nil {
+			return nil, err
+		}
+		c.perks = res
+	}
+	res := make([]Perk, len(c.perks))
+	copy(res, c.perks)
+	return res, nil
+}
+
+// GetPerk returns the perk with the given id
+func (c *Client) GetPerk(id int) (Perk, error) {
+	perks, err := c.GetPerks()
+	if err != nil {
+		return Perk{}, err
+	}
+	for _, perk := range perks {
+		if perk.ID == id {
+			return perk, nil
+		}
+	}
+	return Perk{}, api.ErrNotFound
+}
+
+// GetPerkRune returns the rune with the given id
+func (c *Client) GetPerkRune(id int) (PerkRune, error) {
+	perks, err := c.GetPerks()
+	if err != nil {
+		return PerkRune{}, err
+	}
+	for _, perk := range perks {
+		for _, s := range perk.Slots {
+			for _, r := range s.Runes {
+				if r.ID == id {
+					return r, nil
+				}
+			}
+		}
+	}
+	return PerkRune{}, api.ErrNotFound
+}
+
 // ClearCaches resets all caches of the data dragon client
 func (c *Client) ClearCaches() {
 	c.championsMu.Lock()
@@ -358,6 +409,11 @@ func (c *Client) getInto(endpoint string, target interface{}) error {
 	if err != nil {
 		return err
 	}
+
+	if strings.Contains(endpoint, "runesReforged") {
+		return json.NewDecoder(response.Body).Decode(&target)
+	}
+
 	var ddResponse dataDragonResponse
 	if err = json.NewDecoder(response.Body).Decode(&ddResponse); err != nil {
 		return err
@@ -392,7 +448,7 @@ func (c *Client) doRequest(format dataDragonURL, endpoint string) (*http.Respons
 
 func (c *Client) newRequest(format dataDragonURL, endpoint string) (*http.Request, error) {
 	var version string
-	if (strings.Contains(endpoint, "rune") || strings.Contains(endpoint, "mastery")) &&
+	if (!strings.Contains(endpoint, "runesReforged") && (strings.Contains(endpoint, "rune") || strings.Contains(endpoint, "mastery"))) &&
 		versionGreaterThan(c.Version, latestRuneAndMasteryVersion) {
 		version = latestRuneAndMasteryVersion
 	} else {

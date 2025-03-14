@@ -318,3 +318,24 @@ type SummonerSpell struct {
 	Image         ImageData `json:"image"`
 	Resource      string    `json:"resource"`
 }
+
+type Perk struct {
+	ID    int        `json:"id"`
+	Key   string     `json:"key"`
+	Icon  string     `json:"icon"`
+	Name  string     `json:"name"`
+	Slots []PerkSlot `json:"slots"`
+}
+
+type PerkSlot struct {
+	Runes []PerkRune `json:"runes"`
+}
+
+type PerkRune struct {
+	ID               int    `json:"id"`
+	Key              string `json:"key"`
+	Icon             string `json:"icon"`
+	Name             string `json:"name"`
+	ShortDescription string `json:"shortDesc"`
+	LongDescription  string `json:"longDesc"`
+}
